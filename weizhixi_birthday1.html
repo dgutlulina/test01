@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>韦志晰，生日快乐！</title>
+    <style>
+        :root {
+            --bg-gradient-start: #fce4ec;
+            --bg-gradient-end: #e1f5fe;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --text-color: #333;
+            --border-radius: 15px;
+            --ribbon-color-1: #ff8a80;
+            --ribbon-color-2: #81d4fa;
+            --ribbon-color-3: #aed581;
+        }
+
+        body {
+            font-family: "华康少女文字", "Comic Sans MS", sans-serif;
+            background: linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            color: var(--text-color);
+            animation: fadeIn 1s ease-in-out, blink 2s ease-in-out infinite alternate;
+            z-index: 2;
+            font-size: 3em;
+        }
+
+        #start-button {
+            background-color: var(--ribbon-color-1);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+            z-index: 2;
+        }
+
+        #start-button:hover {
+            background-color: #ff6b6b;
+        }
+
+        #game-container {
+            display: none;
+            background-color: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            margin-top: 20px;
+            animation: slideUp 1s ease-in-out;
+            z-index: 2;
+            position: relative;
+        }
+
+        #timer {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        #score {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .ribbon {
+            position: absolute;
+            width: 10px;
+            height: 150px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        #result {
+            display: none;
+            background-color: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            margin-top: 20px;
+            animation: slideUp 1s ease-in-out;
+            z-index: 2;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes blink {
+            from {
+                opacity: 0.6;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎂志晰宝贝，生日快乐！🎂</h1>
+    <button id="start-button">开始游戏</button>
+    <div id="game-container">
+        <div id="timer">剩余时间: 30 秒</div>
+        <div id="score">得分: 0</div>
+    </div>
+    <div id="result">
+        <p id="result-message"></p>
+    </div>
+    <script>
+        const startButton = document.getElementById('start-button');
+        const gameContainer = document.getElementById('game-container');
+        const timerElement = document.getElementById('timer');
+        const scoreElement = document.getElementById('score');
+        const resultElement = document.getElementById('result');
+        const resultMessage = document.getElementById('result-message');
+
+        let score = 0;
+        let timeLeft = 30;
+        let intervalId;
+
+        startButton.addEventListener('click', () => {
+            startButton.style.display = 'none';
+            gameContainer.style.display = 'block';
+            startGame();
+        });
+
+        function startGame() {
+            intervalId = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `剩余时间: ${timeLeft} 秒`;
+                if (timeLeft === 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            setInterval(createRibbon, 500);
+        }
+
+        function createRibbon() {
+            const ribbon = document.createElement('div');
+            ribbon.classList.add('ribbon');
+            const colors = [
+                'var(--ribbon-color-1)',
+                'var(--ribbon-color-2)',
+                'var(--ribbon-color-3)'
+            ];
+            ribbon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            ribbon.style.left = `${Math.random() * (gameContainer.offsetWidth - 10)}px`;
+            ribbon.style.top = '0px';
+            gameContainer.appendChild(ribbon);
+
+            const fallInterval = setInterval(() => {
+                const top = parseInt(ribbon.style.top);
+                if (top + 150 >= gameContainer.offsetHeight) {
+                    clearInterval(fallInterval);
+                    gameContainer.removeChild(ribbon);
+                } else {
+                    // 降低每次移动的像素值，让彩带掉落更慢
+                    ribbon.style.top = `${top + 2}px`; 
+                }
+            }, 20);
+
+            ribbon.addEventListener('click', () => {
+                score++;
+                scoreElement.textContent = `得分: ${score}`;
+                gameContainer.removeChild(ribbon);
+            });
+        }
+
+        function endGame() {
+            clearInterval(intervalId);
+            gameContainer.style.display = 'none';
+            resultElement.style.display = 'block';
+
+            let message = '';
+            if (score >= 20) {
+                message = `哇塞！你在游戏中表现超级棒👏，就像你在生活中一样出色！在新的一岁里，愿你的生活如彩虹般绚烂，所有的梦想都能轻松实现🎊。`;
+            } else if (score >= 10) {
+                message = `你在游戏里的表现很不错呢👍，说明你充满了活力和机智。新的一岁，希望你能继续保持这份热情，收获满满的幸福和快乐🥰。`;
+            } else {
+                message = `游戏里的小挑战只是生活中的小插曲啦😉，你本身的魅力可远不止于此。新的一岁，愿你平安顺遂，生活里处处都有小确幸💕。`;
+            }
+            resultMessage.textContent = message;
+        }
+    </script>
+</body>
+
+</html>    

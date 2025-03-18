@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>志晰生日派对</title>
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: "Comic Sans MS", sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #FF69B4, #87CEEB);
+            overflow: hidden;
+        }
+
+        /* 启动界面样式 */
+        #greeting-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .neon-text {
+            font-size: clamp(2rem, 5vw, 4rem);
+            color: #FFD700;
+            animation: neonGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes neonGlow {
+            from {
+                text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
+            }
+            to {
+                text-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700, 0 0 40px #FFD700;
+            }
+        }
+
+        #greeting-card button {
+            background-color: #FF69B4;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+
+        #greeting-card button:hover {
+            animation: heartbeat 1s infinite;
+        }
+
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            animation: starFall linear infinite;
+        }
+
+        @keyframes starFall {
+            0% {
+                top: -5px;
+            }
+            100% {
+                top: 100vh;
+            }
+        }
+
+        /* 主游戏场景样式 */
+        .balloon {
+            position: absolute;
+            width: 50px;
+            height: 60px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: float 3s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        .popped {
+            animation: pop 0.5s forwards;
+        }
+
+        @keyframes pop {
+            0% {
+                clip-path: circle(100%);
+            }
+            100% {
+                clip-path: circle(0%);
+            }
+        }
+
+        .message {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        /* 通关彩蛋样式 */
+        .cake {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 300px;
+            background: linear-gradient(
+                180deg,
+                #f4c2c2 20%,
+                #8b4513 20% 40%,
+                #ffd700 40% 60%
+            );
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .cake.flame {
+            animation: flameFlicker 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes flameFlicker {
+            0% {
+                transform: scaleY(1) rotate(-5deg);
+            }
+            100% {
+                transform: scaleY(1.1) rotate(5deg);
+            }
+        }
+
+        .wish {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        /* 背景粒子效果 */
+        .hearts {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .heart {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FF69B4;
+            clip-path: polygon(
+                50% 0%,
+                61% 35%,
+                98% 35%,
+                68% 57%,
+                79% 91%,
+                50% 70%,
+                21% 91%,
+                32% 57%,
+                2% 35%,
+                39% 35%
+            );
+            animation: heartFall linear infinite;
+        }
+
+        @keyframes heartFall {
+            0% {
+                top: -10px;
+            }
+            100% {
+                top: 100vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 启动界面 -->
+    <div id="greeting-card">
+        <h1 class="neon-text">🎉 Happy Birthday! 🎂</h1>
+        <button onclick="startGame()">戳我收礼物</button>
+        <div class="stars"></div>
+    </div>
+    <!-- 主游戏场景 -->
+    <div id="game-scene" style="display: none;"></div>
+    <!-- 通关彩蛋 -->
+    <div class="cake"></div>
+    <div class="wish">
+        <p>愿你的生活充满爱与欢笑！</p>
+    </div>
+    <!-- 背景粒子 -->
+    <div class="hearts"></div>
+    <!-- 音频 -->
+    <audio id="bgm" loop>
+        <source src="happy-birthday.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="popSound">
+        <source src="pop.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="cheerSound">
+        <source src="cheer.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const greetingCard = document.getElementById('greeting-card');
+        const gameScene = document.getElementById('game-scene');
+        const cake = document.querySelector('.cake');
+        const wish = document.querySelector('.wish');
+        const bgm = document.getElementById('bgm');
+        const popSound = document.getElementById('popSound');
+        const cheerSound = document.getElementById('cheerSound');
+        let balloonsPopped = 0;
+        const totalBalloons = 10;
+
+        // 生成随机下落的星星
+        function generateStars() {
+            const starsContainer = document.querySelector('.stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDuration = Math.random() * 5 + 3 + 's';
+                star.style.animationDelay = Math.random() * 5 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 生成随机下落的心形粒子
+        function generateHearts() {
+            const heartsContainer = document.querySelector('.hearts');
+            for (let i = 0; i < 100; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDuration = Math.random() * 5 + 3 + 's';
+                heart.style.animationDelay = Math.random() * 5 + 's';
+                heartsContainer.appendChild(heart);
+            }
+        }
+
+        // 启动游戏
+        function startGame() {
+            greetingCard.style.display = 'none';
+            gameScene.style.display = 'block';
+            bgm.play();
+            createBalloons();
+            generateHearts();
+        }
+
+        // 创建气球
+        function createBalloons() {
+            const colors = ['#ff3366', '#45c3ff', '#ffdd33'];
+            const messages = [
+                '愿你的每一天都如阳光般灿烂！',
+                '祝你生日快乐，梦想成真！',
+                '希望你的生活充满无尽的欢乐！',
+                '新的一岁，要继续闪闪发光哦！',
+                '生日快乐，未来的日子顺风顺水！',
+                '愿你被世界温柔以待！',
+                '祝你生日快乐，幸福永远围绕着你！',
+                '新的一岁，开启新的精彩篇章！',
+                '愿你的笑容永远那么灿烂！',
+                '生日快乐，健康快乐常相伴！'
+            ];
+            for (let i = 0; i < totalBalloons; i++) {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                balloon.style.left = Math.random() * 90 + '%';
+                balloon.style.animationDelay = Math.random() * 2 + 's';
+                balloon.style.backgroundColor = colors[i % 3];
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.textContent = messages[Math.floor(Math.random() * messages.length)];
+                balloon.appendChild(message);
+                balloon.onclick = () => popBalloon(balloon, message);
+                gameScene.appendChild(balloon);
+            }
+        }
+
+        // 爆破气球
+        function popBalloon(balloon, message) {
+            balloon.classList.add('popped');
+            popSound.play();
+            message.style.display = 'block';
+            balloonsPopped++;
+            setTimeout(() => {
+                balloon.remove();
+                message.remove();
+            }, 500);
+            if (balloonsPopped === totalBalloons) {
+                endGame();
+            }
+        }
+
+        // 结束游戏
+        function endGame() {
+            gameScene.style.display = 'none';
+            cake.style.display = 'block';
+            cake.classList.add('flame');
+            cheerSound.play();
+            cake.onclick = () => {
+                wish.style.display = 'block';
+            };
+        }
+
+        // 初始化星星
+        generateStars();
+    </script>
+</body>
+
+</html>     
