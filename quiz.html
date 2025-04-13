@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刷题页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 去除淡入淡出的过渡效果相关样式 */
+       .answer-feedback {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- 导航栏 -->
+    <nav class="bg-blue-500 p-4 text-white flex justify-between items-center">
+        <h1 class="text-2xl font-bold">刷题系统</h1>
+        <div>
+            <button id="shuffle-btn" class="bg-white text-blue-500 px-4 py-2 rounded-md hover:bg-gray-200">打乱顺序答题</button>
+            <button id="order-btn" class="bg-white text-blue-500 px-4 py-2 rounded-md hover:bg-gray-200 ml-2">按顺序答题</button>
+            <button id="wrong-answer-btn" class="bg-white text-blue-500 px-4 py-2 rounded-md hover:bg-gray-200 ml-2">查看错题集</button>
+            <button id="back-to-questions-btn" class="bg-white text-blue-500 px-4 py-2 rounded-md hover:bg-gray-200 ml-2 hidden">返回题目</button>
+        </div>
+    </nav>
+    <!-- 题目容器 -->
+    <div id="question-container" class="p-8 max-w-3xl mx-auto">
+        <div id="question" class="bg-white p-6 rounded-md shadow-md mb-6">
+            <p id="question-text" class="text-lg font-bold mb-4"></p>
+            <div id="options" class="space-y-2"></div>
+            <input type="text" id="fill-in-answer" class="border border-gray-300 p-2 rounded-md w-full hidden" placeholder="请输入答案">
+            <button id="submit-answer" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">提交答案</button>
+            <button id="next-question-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 hidden">下一题</button>
+            <p id="feedback" class="answer-feedback mt-4 text-green-500"></p>
+            <p id="correct-answer" class="answer-feedback mt-4 text-red-500"></p>
+        </div>
+    </div>
+    <!-- 错题集容器 -->
+    <div id="wrong-answer-container" class="p-8 max-w-3xl mx-auto hidden">
+        <h2 class="text-2xl font-bold mb-4">错题集</h2>
+        <div id="wrong-questions" class="space-y-4">
+            <div id="wrong-question" class="bg-white p-6 rounded-md shadow-md mb-6">
+                <p id="wrong-question-text" class="text-lg font-bold mb-4"></p>
+                <div id="wrong-options" class="space-y-2"></div>
+                <input type="text" id="wrong-fill-in-answer" class="border border-gray-300 p-2 rounded-md w-full hidden" placeholder="请输入答案">
+                <button id="wrong-submit-answer" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">提交答案</button>
+                <button id="wrong-next-question-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 hidden">下一题</button>
+                <p id="wrong-feedback" class="answer-feedback mt-4 text-green-500"></p>
+                <p id="wrong-correct-answer" class="answer-feedback mt-4 text-red-500"></p>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 示例题目数据，你可以根据需要修改
+        const questions = [
+    
+        {
+            type: 'single',
+            question: '重视家庭生活，崇尚四世同堂甚至五世同堂，体现了（    ）的生活态度。',
+            options: ['阴阳家', '墨家', '儒家', '佛家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '“孤舟蓑笠翁，独钓寒江雪”体现的是（    ）的生活态度。',
+            options: ['道家', '名家', '纵横家', '小说家'],
+            answer: '道家'
+        },
+        {
+            type: 'single',
+            question: '先秦时代，教育内容以“六艺”为主，下列不属于“六艺”的是（    ）。',
+            options: ['射', '御', '礼', '武'],
+            answer: '武'
+        },
+        {
+            type: 'single',
+            question: '中国人历来重视丧葬、祭祀之礼，这是受（    ）文化长期熏陶形成的。',
+            options: ['墨家', '道家', '儒家', '法家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '冯友兰说，因为儒家“游方之内”，显得比道家入世一些；因为道家“游方之外”，显得比儒家出世一些。这里的“方”指（    ）。',
+            options: ['自然', '社会', '宗教', '文艺'],
+            answer: '社会'
+        },
+        {
+            type: 'single',
+            question: '中国画的杰作大都画的是山水。一幅山水画里，在山脚下，或是在河岸边，总可以看到有个人坐在那里欣赏自然美，参悟超越天人的妙道。这表现的是（    ）的精神。',
+            options: ['法家', '道家', '儒家', '名家'],
+            answer: '道家'
+        },
+        {
+            type: 'single',
+            question: '陶渊明的诗“结庐在人境，而无车马喧。问君何能尔，心远地自偏。采菊东篱下，悠然见南山。山气日夕佳，飞鸟相与还。此中有真意，欲辨已忘言”表达的是（    ）的精神境界。',
+            options: ['小说家', '农家', '儒家', '道家'],
+            answer: '道家'
+        },
+        {
+            type: 'single',
+            question: '四民阶层中，创造思想学术文化的一个阶层是（    ）。',
+            options: ['土', '农', '工', '商'],
+            answer: '土'
+        },
+        {
+            type: 'single',
+            question: '《四库全书》是在（    ）皇帝时代编纂的。',
+            options: ['康熙', '顺治', '乾隆', '雍正'],
+            answer: '乾隆'
+        },
+        {
+            type: 'single',
+            question: '中国传统社会的基本价值观是（    ）。',
+            options: ['重商', '重官', '重农', '重学'],
+            answer: '重农'
+        },
+        {
+            type: 'single',
+            question: '《淮南子》的作者是（    ）。',
+            options: ['刘备', '刘秀', '刘安', '刘墉'],
+            answer: '刘安'
+        },
+        {
+            type: 'single',
+            question: '《吕氏春秋》的作者是（    ）。',
+            options: ['吕不韦', '吕祖谦', '吕蒙正', '吕端'],
+            answer: '吕不韦'
+        },
+        {
+            type: 'single',
+            question: '站在人生之内来看人生，这是（    ）生命哲学的视角。',
+            options: ['儒家', '道家', '佛家', '阴阳家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '中国古代社会“重本抑末”，“末”是指（    ）。',
+            options: ['农业', '商业', '手工业', '牧业'],
+            answer: '商业'
+        },
+        {
+            type: 'single',
+            question: '中国图书或书籍的四大门类不包括（    ）。',
+            options: ['经', '史', '子', '诗'],
+            answer: '诗'
+        },
+        {
+            type: 'single',
+            question: '中国历史上，（    ）首倡“有教无类”，创办私学。',
+            options: ['孔子', '老子', '孟子', '韩非子'],
+            answer: '孔子'
+        },
+        // 第二讲题目
+        {
+            type: 'single',
+            question: '（    ）是儒家学派的创始人。',
+            options: ['孟子', '荀子', '孔子', '老子'],
+            answer: '孔子'
+        },
+        {
+            type: 'single',
+            question: '记载孔子的言行、孔子与弟子言行而集中体现孔子思想的结果是（    ）。',
+            options: ['《传习录》', '《论语》', '《中庸》', '《近思录》'],
+            answer: '《论语》'
+        },
+        {
+            type: 'single',
+            question: '下列经典不属于儒家“六经”的是（    ）。',
+            options: ['《诗》', '《书》', '《易》', '《战国策》'],
+            answer: '《战国策》'
+        },
+        {
+            type: 'single',
+            question: '历史上被称为圣人、“至圣先师”的是（    ）。',
+            options: ['老子', '孔子', '广成子', '孟子'],
+            answer: '孔子'
+        },
+        {
+            type: 'single',
+            question: '儒家的“亚圣”是指（    ）。',
+            options: ['庄子', '董仲舒', '孟子', '文中子'],
+            answer: '孟子'
+        },
+        {
+            type: 'single',
+            question: '中国历史上第一位开创了平民教育的私学教师是（    ）。',
+            options: ['荀子', '孟子', '老子', '孔子'],
+            answer: '孔子'
+        },
+        {
+            type: 'single',
+            question: '“己欲立而立人，己欲达而达人”，这是推己及人的肯定方面、孔子称之为（    ）。',
+            options: ['忠', '恕', '仁', '义'],
+            answer: '忠'
+        },
+        {
+            type: 'single',
+            question: '“己所不欲，勿施于人”，这是推己及人的否定方面，孔子称之为（    ）。',
+            options: ['礼', '恕', '仁', '义'],
+            answer: '恕'
+        },
+        {
+            type: 'single',
+            question: '“吾十有五，而志于学。三十而立。四十而不惑。五十而知天命。六十而耳顺。七十而从心所欲。不逾矩。”这是（    ）描述自己精神修养发展的过程。',
+            options: ['孔子', '荀子', '朱熹', '王阳明'],
+            answer: '孔子'
+        },
+        {
+            type: 'single',
+            question: '按冯友兰先生的观点，儒家的理想主义派和现实主义派分别指（    ）。',
+            options: ['韩愈和李翱', '孟子和荀子', '朱熹和王阳明', '颜回和子路'],
+            answer: '孟子和荀子'
+        },
+        {
+            type: 'single',
+            question: '“人性善”的学说是儒家思想家（    ）提出来的，使他赢得了极高的声望。',
+            options: ['孔子', '孟子', '荀子', '董仲舒'],
+            answer: '孟子'
+        },
+        {
+            type: 'single',
+            question: '“人性恶”的学说是儒家思想家（    ）提出来的。',
+            options: ['告子', '孟子', '荀子', '陆贾'],
+            answer: '荀子'
+        },
+        {
+            type: 'single',
+            question: '历史上提出“民为贵，社稷次之，君为轻。”观点的是（    ）。',
+            options: ['周公', '孔子', '老子', '孟子'],
+            answer: '孟子'
+        },
+        {
+            type: 'single',
+            question: '儒家主张的爱与墨家主张的爱的区别在于（    ）。',
+            options: ['差等之爱', '兼爱', '阶级之爱', '宗教之爱'],
+            answer: '差等之爱'
+        },
+        {
+            type: 'single',
+            question: '“老吾老，以及人之老；幼吾幼，以及人之幼”表现了儒家推己及人的道德情怀。这是（    ）提出来的。',
+            options: ['孔子', '孟子', '荀子', '韩愈'],
+            answer: '孟子'
+        },
+        {
+            type: 'single',
+            question: '“天道有常，不为尧存，不为桀亡。”是诸子中那位思想家的观点（    ）。',
+            options: ['孟子', '韩非子', '荀子', '老子'],
+            answer: '荀子'
+        },
+        {
+            type: 'single',
+            question: '“四书”中不包括（    ）。',
+            options: ['《大学》', '《尚书》', '《孟子》', '《中庸》'],
+            answer: '《尚书》'
+        },
+        {
+            type: 'single',
+            question: '在《论语·为政》中，孔子所说的“而立”之年指的是（    ）岁。',
+            options: ['20', '30', '40', '50'],
+            answer: '30'
+        },
+        {
+            type: 'single',
+            question: '战国思想家荀子是（    ）学派的集大成者。',
+            options: ['儒家', '法家', '墨家', '名家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '“穷则独善其身，达则兼济天下”历来是中国文人的理想，这句话出自（    ）。',
+            options: ['《论语》', '《庄子》', '《孟子》', '《大学》'],
+            answer: '《孟子》'
+        },
+        {
+            type: 'single',
+            question: '墨子的主要思想是“兼爱”，他所反对的“爱有差等”这一观点是哪家学派的？（    ）。',
+            options: ['儒家', '法家', '道家', '名家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '孟子说“君子有三乐”。下列哪项不在其“三乐”之列？（    ）。',
+            options: ['父母俱存，兄弟无故', '仰不愧于天，俯不怍于人', '乡党无不称其善也', '得天下英才而教育之'],
+            answer: '乡党无不称其善也'
+        },
+        {
+            type: 'single',
+            question: '下面的哪句话是孔子说的？（    ）。',
+            options: ['有朋自远方来，不亦乐乎！', '天下兴亡，匹夫有责', '劳心者治人，劳力者治于人', '老吾老，以及人之老'],
+            answer: '有朋自远方来，不亦乐乎！'
+        },
+        {
+            type: 'single',
+            question: '“名不正，则言不顺”是哪家的思想？（    ）。',
+            options: ['儒家', '道家', '法家', '佛家'],
+            answer: '儒家'
+        },
+        {
+            type: 'single',
+            question: '下面哪个选项是“四书”的构成？（    ）。',
+            options: ['大学. 中庸. 论语, 尔雅', '大学. 中庸. 论语. 孟子', '大学. 孝经. 论语. 尔雅', '大学. 孝经. 论语. 孟子'],
+            answer: '大学. 中庸. 论语. 孟子'
+        },
+        {
+            type: 'single',
+            question: '“为天地立心，为生民立命，为往圣继绝学，为万世开太平。”是（    ）的名言。',
+            options: ['张载', '朱熹', '程颐', '王守仁'],
+            answer: '张载'
+        },
+        {
+            type: 'single',
+            question: '《论语》中认为“为仁之本”的是（    ）。',
+            options: ['忠义', '孝悌', '诚信', '友善'],
+            answer: '孝悌'
+        },
+        {
+            type: 'single',
+            question: '下面最有可能在朱元璋删节《孟子》时被删掉的是（    ）。',
+            options: ['不以规矩不成方圆', '有恒产者有恒心，无恒产者无恒心', '民为贵，社稷次之，君为轻', '生亦我所欲也，义亦我所欲也'],
+            answer: '有恒产者有恒心，无恒产者无恒心'
+        },
+        {
+            type: 'single',
+            question: '孔子首创了什么教育？（    ）。',
+            options: ['贵族教育', '平民教育', '素质教育'],
+            answer: '平民教育'
+        },
+        {
+            type: 'single',
+            question: '“大道之行也，天下为公”一语出自（    ）。',
+            options: ['《论语》', '《孟子》', '《礼记》', '《老子》'],
+            answer: '《礼记》'
+        },
+        {
+            type: 'single',
+            question: '“吾曹不出，如苍生何？”这句话出自是近代著名思想家（    ）。',
+            options: ['熊十力', '马一浮', '章太炎', '梁漱溟'],
+            answer: '梁漱溟'
+        },
+        {
+            type: 'single',
+            question: '“为天地立心，为生民立命，为往圣继绝学，为万世开太平。”这是儒家思想家（    ）的名言。',
+            options: ['周敦颐', '张载', '朱熹', '程颐'],
+            answer: '张载'
+        },
+        {
+            type: 'single',
+            question: '“弟子入则孝，出则弟，谨而信，泛爱众，而亲仁。行有余力，则以学文。”这段话出自儒家经典（    ）。',
+            options: ['《论语》', '《孟子》', '《大学》', '《中庸》'],
+            answer: '《论语》'
+        },
+        {
+            type: 'single',
+            question: '“父母之年，不可不知，一则以喜，一则以惧。”这段话出自（    ）。',
+            options: ['《大学》', '《尚书》', '《孟子》', '《论语》'],
+            answer: '《论语》'
+        },
+        {
+            type: 'single',
+            question: '“富贵不能淫，贫贱不能移，威武不能屈，此之谓大丈夫。”这段话出自（    ）。',
+            options: ['孔子', '张载', '孟子', '王阳明'],
+            answer: '孟子'
+        },
+        // 第三讲题目
+        {
+            type: 'single',
+            question: '（    ）用“道”来作为生成世界万物的母体。',
+            options: ['老子', '孔子', '韩非子', '孟子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '下列关于中国古代“四民”分工描述错误的是：',
+            options: ['贵族', '土', '农', '商'],
+            answer: '贵族'
+        },
+        {
+            type: 'single',
+            question: '（    ）提出“无为而治”的思想。',
+            options: ['老子', '孔子', '孟子', '韩非子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '（    ）首先提出“玄”的概念。',
+            options: ['孔子', '老子', '孟子', '庄子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '以“老子”为名的书，后来也叫做（    ），因而也被当做中国历史上第一部哲学著作。',
+            options: ['《太玄经》', '《南华经》', '《通玄真经》', '《道德经》'],
+            answer: '《道德经》'
+        },
+        {
+            type: 'single',
+            question: '“道可道，非常道；名可名，非常名。无名天地之始，有名万物之母。”这段著名的话出自《道德经》第（    ）章。',
+            options: ['八十一', '一', '四十一', '二'],
+            answer: '一'
+        },
+        {
+            type: 'single',
+            question: '“是以圣人之治，虚其心，实其腹，弱其志，强其骨，常使民无知无欲。”这是（    ）政治哲学观点。',
+            options: ['列子', '庄子', '老子', '韩非子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '按照冯友兰先生的观点，（    ）可算是先秦最大的道家。',
+            options: ['列御寇', '杨朱', '老子', '庄子'],
+            answer: '庄子'
+        },
+        {
+            type: 'single',
+            question: '下列人物中，认为“道”是世界本体的是：',
+            options: ['孔子', '孟子', '老子', '庄子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '“贵以身为天下，若可寄天下；爱以身为天下，若可托天下。”这是（    ）率先提出的观点。',
+            options: ['老子', '庄子', '列子', '杨子'],
+            answer: '老子'
+        },
+        {
+            type: 'single',
+            question: '提出“为善无近名，为恶无近刑”、“处乎材与不材之间”的保身原则的是（    ）。',
+            options: ['老子', '庄子', '列子', '杨子'],
+            answer: '庄子'
+        },
+        {
+            type: 'single',
+            question: '庄子非常强调“随天顺性”，反对“以人灭天”。这里“天”是指（    ）。',
+            options: ['自然', '人为', '仁义道德', '法治'],
+            answer: '自然'
+        },
+        {
+            type: 'single',
+            question: '妻子死了却“鼓盆而歌”的是（    ）。',
+            options: ['秦失', '惠子', '列子', '庄子'],
+            answer: '庄子'
+        },
+        {
+            type: 'single',
+            question: '“方生方死。方死方生。方可方不可，方不可方可。因是因非，因非因是。”这是（    ）的相对主义观点。',
+            options: ['列子', '庄子', '老子', '韩非子'],
+            answer: '庄子'
+        },
+        {
+            type: 'single',
+            question: '“天地与我并生，而万物与我为一。”这是（    ）的观点。',
+            options: ['孔子', '孟子', '老子', '庄子'],
+            answer: '庄子'
+        },
+        {
+            type: 'single',
+            question: '站在人生的边缘上来看人生，这是（    ）的视角。',
+            options: ['儒家', '道家', '佛家', '阴阳家'],
+            answer: '道家'
+        },
+        {
+            type: 'single',
+            question: '国学大师（    ）认为儒家是医治社会病态的医生；道家是医生的医生，是研究医理的。',
+            options: ['梁漱溟', '牟宗三', '南怀瑾', '熊十力'],
+            answer: '南怀瑾'
+        },
+        {
+            type: 'single',
+            question: '“人具有隐藏的情愫，愿得披发而行吟，可是这样的行为非孔子学说所容许。于是那些喜欢蓬头跣足的人走而归于道教。”这句话出自著名作家（    ）。',
+            options: ['沈从文', '林语堂', '鲁迅', '李敖'],
+            answer: '林语堂'
+        },
+        {
+            type: 'single',
+            question: '“庄子眼极冷，心肠极热。眼冷，故是非不管；心肠极热，故感慨无端。虽知无用，而未能忘情，到底是热肠挂住；虽不能忘情，而终不下手，到底是冷眼看穿。”这段评价庄子的话，出自清代学者（    ）。',
+            options: ['魏源', '阮沉', '俞樾', '胡文英'],
+            answer: '胡文英'
+        },
+        {
+            type: 'single',
+            question: '“人生在世不称意，明朝散发弄扁舟”，表现的是（    ）的生命态度。',
+            options: ['道家', '名家', '纵横家', '儒家'],
+            answer: '道家'
+        },
+        {
+            type: 'single',
+            question: '哲学家（    ）认为，道家就像古代的太空人。',
+            options: ['熊十力', '牟宗三', '方东美', '陈鼓应'],
+            answer: '方东美'
+        },
+        {
+            type: 'single',
+            question: '《走在人生的边上》一书的作者是（    ）。',
+            options: ['钱钟书', '杨绛', '张中行', '沈从文'],
+            answer: '钱钟书'
+        },
+        {
+            type: 'single',
+            question: '“道家出于史官”是（    ）提出的观点。',
+            options: ['冯友兰', '刘歆', '司马迁', '司马谈'],
+            answer: '刘歆'
+        },
+        {
+            type: 'single',
+            question: '“九层之台起于累土，千里之行始于足下”是（    ）的观点。',
+            options: ['庄子', '列子', '文子', '老子'],
+            answer: '老子'
+        }
+    ,
+    
+    {
+        type: 'multiple',
+        question: '下列选项中不属于司马谈所说“六家”者是（    ）',
+        options: ['农家', '法家', '纵横家', '阴阳家'],
+        answer: ['农家', '纵横家']
+    },
+    {
+        type: 'multiple',
+        question: '刘歆在《七略》中所述“十家”，除司马谈所说的“六家”之外，其余四家是（    ）',
+        options: ['农家', '杂家', '纵横家', '小说家', '兵家'],
+        answer: ['农家', '杂家', '纵横家', '小说家']
+    },
+    {
+        type: 'multiple',
+        question: '中国固有学问之精髓体现在（    ）“三教”之道。',
+        options: ['道家', '法家', '儒家', '佛家'],
+        answer: ['道家', '儒家', '佛家']
+    },
+    {
+        type: 'multiple',
+        question: '《四库全书》把古代文化典籍分成四部，即（    ）',
+        options: ['经', '史', '子', '集'],
+        answer: ['经', '史', '子', '集']
+    },
+    {
+        type: 'multiple',
+        question: '“国学”又称为（    ），与“西学”或“新学”相对应。',
+        options: ['中学', '道学', '旧学', '玄学'],
+        answer: ['中学', '旧学']
+    },
+    {
+        type: 'multiple',
+        question: '“四书五经”中的“四书”，是指（    ）四部儒家经典。',
+        options: ['《论语》', '《大学》', '《孟子》', '《中庸》'],
+        answer: ['《论语》', '《大学》', '《孟子》', '《中庸》']
+    },
+    {
+        type: 'multiple',
+        question: '儒家的“四书”指的是（    ）。',
+        options: ['《论语》', '《孟子》', '《大学》', '《中庸》', '《左传》'],
+        answer: ['《论语》', '《孟子》', '《大学》', '《中庸》']
+    },
+    {
+        type: 'multiple',
+        question: '儒家一贯重视的“五伦”即五种人伦道德关系是指（    ）。',
+        options: ['父子', '君臣', '夫妇', '兄弟', '朋友', '婚姻'],
+        answer: ['父子', '君臣', '夫妇', '兄弟', '朋友']
+    },
+    {
+        type: 'multiple',
+        question: '在孟子看来，人之异于禽兽者主要在于人性中有“四端”即四种善的种子，它们是（    ）。',
+        options: ['仁', '义', '礼', '智', '信'],
+        answer: ['仁', '义', '礼', '智']
+    },
+    {
+        type: 'multiple',
+        question: '孟子说：“君子之于物也，爱之而弗仁；于民也，仁之而弗亲。亲亲而仁民，仁民而爱物。”这段话表现了儒家倡导的爱是（    ）。',
+        options: ['爱有差等', '爱可以推己及人', '爱可以从人延伸到物', '爱父母和亲人要胜过爱其他一般的人和物'],
+        answer: ['爱有差等', '爱可以推己及人', '爱可以从人延伸到物', '爱父母和亲人要胜过爱其他一般的人和物']
+    },
+    {
+        type: 'multiple',
+        question: '先秦儒家最具代表性的人物有（    ）。',
+        options: ['孔子', '荀子', '孟子', '颜子（颜回）'],
+        answer: ['孔子', '荀子', '孟子']
+    },
+    {
+        type: 'multiple',
+        question: '在《道德经》中，万物变化所遵循的规律最根本的可表述为”反者道之动”。与这一意思相同的是（    ）。',
+        options: ['日盈则仄，月盈则食', '物极必反', '哀多益寡', '逝曰远，远曰反'],
+        answer: ['日盈则仄，月盈则食', '物极必反', '逝曰远，远曰反']
+    },
+    {
+        type: 'multiple',
+        question: '下列人物中，属于先秦道家著名的代表性人物的是（    ）。',
+        options: ['庄子', '鬼谷子', '老子', '杨朱'],
+        answer: ['庄子', '老子', '杨朱']
+    },
+    {
+        type: 'multiple',
+        question: '下列选项中属于老子倡导的处事法则的有（    ）。',
+        options: ['寡欲', '守柔', '善下', '不争', '知足'],
+        answer: ['寡欲', '守柔', '善下', '不争', '知足']
+    },
+    {
+        type: 'multiple',
+        question: '最能代表杨朱思想的观点是（    ）。',
+        options: ['为我', '兼爱', '轻物重生', '尚贤'],
+        answer: ['为我', '轻物重生']
+    },
+    {
+        type: 'multiple',
+        question: '属于上古时期著名隐士的有（    ）。',
+        options: ['巢父', '许由', '华土', '严光'],
+        answer: ['巢父', '许由', '华土']
+    },
+    {
+        type: 'multiple',
+        question: '《庄子》第一篇《逍遥游》中首先讲到两种极大之物，它们是（    ）',
+        options: ['大椿树', '鲲', '鹏', '海神（北海若）'],
+        answer: ['鲲', '鹏']
+    },
+    {
+        type: 'multiple',
+        question: '隐士的别称有（    ）等。',
+        options: ['处士', '高士', '逸民', '隐者'],
+        answer: ['处士', '高士', '逸民', '隐者']
+    },
+    {
+        type: 'multiple',
+        question: '“孔席不暖，墨突不黔”表达的是（    ）栖栖逞逞拯救天下而忘我的精神。',
+        options: ['孔子', '大禹', '周公', '墨子'],
+        answer: ['孔子', '墨子']
+    },
+    {
+        type: 'multiple',
+        question: '属于道家所反对的残生伤性的行为有（    ）。',
+        options: ['五色令人目盲', '五音令人耳聋', '五味令人口爽', '驰骋田猎，令人心发狂', '难得之货，令人行妨'],
+        answer: ['五色令人目盲', '五音令人耳聋', '五味令人口爽', '驰骋田猎，令人心发狂', '难得之货，令人行妨']
+    },
+    {
+        type: 'multiple',
+        question: '庄子看宇宙和人生的眼光具有（    ）的特点，一上来就表现出一种仰天俯地的哲学规模。',
+        options: ['冷峻', '大', '高', '远'],
+        answer: ['冷峻', '大', '高', '远']
+    },
+    {
+        type: 'multiple',
+        question: '一般说来，道家文化或老庄思想比较受到（    ）的青。',
+        options: ['年长的人', '失意的人', '积极进取的人', '尝到了所谓的成功带来的痛苦的人'],
+        answer: ['年长的人', '失意的人', '尝到了所谓的成功带来的痛苦的人']
+    },
+    {
+        type: 'multiple',
+        question: '一般说来，隐士的人格特征表现在（    )。',
+        options: ['非常有学问、有才能', '能做官而不愿做官', '看重人格独立、思想自由', '不倚仗权势', '自然无为、安贪乐道'],
+        answer: ['非常有学问、有才能', '能做官而不愿做官', '看重人格独立、思想自由', '不倚仗权势', '自然无为、安贪乐道']
+    },
+    {
+        type: 'multiple',
+        question: '《老子》一书提出许多对立统一的范畴，比如（    ）。',
+        options: ['“有”与“无”', '“难”与“易”', '“高”与“下”', '“前”与“后”', '“长”与“短”'],
+        answer: ['“有”与“无”', '“难”与“易”', '“高”与“下”', '“前”与“后”', '“长”与“短”']
+    },
+    {
+        type: 'multiple',
+        question: '老子以水喻道，是因为水的诸多特性与老子的“道”相近，比如（    ）。',
+        options: ['善利万物', '柔弱', '善下', '不争'],
+        answer: ['善利万物', '柔弱', '善下', '不争']
+    },
+    {
+        type: 'multiple',
+        question: '在庄子看来，用超越的眼观看事物，就可以摆脱狭隘的人类中心主义带来的狭隘和肤浅，就可以实现（    ）。',
+        options: ['齐是非', '齐物我', '齐生死', '齐天人'],
+        answer: ['齐是非', '齐物我', '齐生死']
+    }
+,
+
+{
+    type: 'judge',
+    question: '按照冯友兰先生的观点，儒家起源于武士。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '按照冯友兰先生的观点，道家起源于法术之士。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '哲学在中国文化中的地位，历来可以与宗教在其他文化中的地位相比。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '中国哲学的精神，是追求所谓“内圣外王”。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '中国文化中的“三教合一”的“三教”是指萨满教、巫教、回教。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '司马迁首次将诸子之学归为六家。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '我国古代的“六艺”是指礼、乐、射、御、书、数。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '儒家强调人的社会生命、道德生命一面，强化了生命的责任和义务。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '《汉书·艺文志》采刘歆的观点，认为道家出于史官。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '按冯友兰先生观点，儒家思想和道家思想都是对“农”的生活的提炼和反映，只不过在方式上各有侧重。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '冯友兰先生认为，儒家是宗教。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '作为哲学的佛学与作为宗教的佛教，是有区别的。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '中国人不大关心宗教，是因为他们极其关心哲学。他们不是宗教的，因为他们都是哲学的。他们在哲学里满足了他们对超乎现世的追求。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '科学前进一步，宗教就后退一步；在科学进展的面前，宗教的权威降低了。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '哲学的功用，尤其是形上学的功用，不是增加积极的知识，而在于提高心灵的境界——达到超乎现世的境界，获得高于道德价值的价值。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '冯友兰认为，道家思想与道教的教义是相同的。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '从入世的哲学的观点看，出世的哲学是太理想主义的，无实用的，消极的。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '中国人对于高于道德价值的价值，毫无觉解。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '从出世的哲学的观点看，入世的哲学太现实主义了，太肤浅了。它也许是积极的，但是就像走错了路的人的快跑：越跑得快，越错得很。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '中国哲学传统既是入世的也是出世的。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“儒家游方之内，道家游方之外。”这是说儒家的入世精神多一些，道家的出世精神多一些。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '传统文化的儒道互补实际上是入世精神与出世精神的相互补充和平衡。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '杜甫和李白的诗，可以看作是儒家和道家两种精神传统的表现。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '与希腊人围绕城邦来组织其社会不同，传统中国人围绕家（家庭、家族）来组织起社会，因此传统的中国社会制度可以叫做家邦。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '林语堂用“圆熟”一词来概括中国人的德性。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“君子喻于义，小人喻于利”是孔子的观点。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“君子坦荡荡，小人长戚戚”是孟子的观点。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '“学而时习之，不亦说乎？有朋自远方来，不亦乐乎？人不知而不愠，不亦君子乎？”表现了儒家的生命之乐。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '如何实行仁，在孔子孟子看来，主要在于推已及人。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '儒家主张无差别无条件地爱所有的人，爱别人的父亲跟爱自己的父亲应当完全一样。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '“知者不惑，仁者不忧，勇者不惧。”因此，仁者永远是快乐的。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“孔席不暖，墨突不黔”，说的是孔子和墨子为拯救天下而自我牺牲的精神。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“如欲平治天下，当今之世，舍我其谁也？”表现的是孔子的救世情怀。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '“浩然之气”体现出儒家圣贤一种伟大的人格精神之美。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“不仁者，不可以久处约，不可以长处乐。”这是孟子的观点。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '老子的“道”和孔子的“道”是一样的。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '道家学派的创始人是广成子。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '无为而治的“无为”就是不作为。',
+    options: ['正确', '错误'],
+    answer: '错误'
+},
+{
+    type: 'judge',
+    question: '如果说儒家生命哲学代表了中国文化阳刚、积极进取的现实主义一面，则道家生命哲学代表了中国文化阴柔、消极退隐的浪漫主义一面。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“反者道之动”是说，在变化发展过程中，任何事物若发展到极致，必向着自己的对立面转化。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '安贫乐道，就是隐士高洁人格的重要特征；隐士的物质生活可能是贫困的，但其精神却是富有的。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '真正的道家人主持“功成名遂身退”的人生哲学。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '“全身避害”是道家生命哲学的宗旨。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '道家就像是中国古代的“太空人”。',
+    options: ['正确', '错误'],
+    answer: '正确'
+},
+{
+    type: 'judge',
+    question: '老子对儒家倡导的仁义、孝慈、尚贤、尚智等主张持赞同态度。',
+    options: ['正确', '错误'],
+    answer: '错误'
+}
+,
+
+{
+    type: 'fill-in',
+    question: '按冯友兰先生的观点，（   ）在中国文化中所占的地位，历来可以与宗教在其他文化中的地位相比。',
+    answer: '哲学'
+},
+{
+    type: 'fill-in',
+    question: '按中国哲学的传统，它的功用不在于增加积极的知识，而在于提高（   ）。',
+    answer: '人生境界'
+},
+{
+    type: 'fill-in',
+    question: '中国哲学所追求的圣人的人格是所谓（    ）的人格。',
+    answer: '内圣外王'
+},
+{
+    type: 'fill-in',
+    question: '由于（中国）哲学的主题是内圣外王之道，所以学哲学不单是要获得这种知识，而且是要养成这种（    ）',
+    answer: '人格'
+},
+{
+    type: 'fill-in',
+    question: '‘知者乐水，仁者乐山；知者动，仁者静；知者乐，仁者寿。’这段名言是（    ）的话。',
+    answer: '孔子'
+},
+{
+    type: 'fill-in',
+    question: '‘反者道之动’是（    ）的观点。',
+    answer: '老子'
+},
+{
+    type: 'fill-in',
+    question: '按冯友兰先生的说法，儒家起源于（    ）。',
+    answer: '文士'
+},
+{
+    type: 'fill-in',
+    question: '按冯友兰先生的说法，道家起源于（    ）。',
+    answer: '隐士'
+},
+{
+    type: 'fill-in',
+    question: '梁漱溟先生说：‘中国文化和印度文化有其共同的特点，就是要人的智慧不单向外用，而回返到自家生命上来，使生命成了智慧的，而非智慧为役于生命。’从这个角度看，中国文化是属于（   ）的学问和智慧。',
+    answer: '生命'
+},
+{
+    type: 'fill-in',
+    question: '国学本质上是一种实践之学，不是记诵之学，要求学习者不仅仅求‘知’，更重要的是要付诸于（   ），将生活与观念打成一片，达到以身载道，表里如一、内外通透。',
+    answer: '行'
+},
+{
+    type: 'fill-in',
+    question: '按照陈鼓应先生的观点，道家出于（    ）。',
+    answer: '医官'
+},
+{
+    type: 'fill-in',
+    question: '中国历史上最早开创私人办学，打破学在官府、官师不分局面，促成官师分离、学下庶人的人是（    ）。',
+    answer: '孔子'
+},
+{
+    type: 'fill-in',
+    question: '‘孔席不暖，墨突不黔’，分别描述指的是栖栖逞逞，奔走列国，积极救世的思想家（    ）和（    ）。',
+    answer: '孔子 墨子'
+},
+{
+    type: 'fill-in',
+    question: '孔子最崇尚的占古圣人是西周初期的（    ）。',
+    answer: '周公'
+},
+{
+    type: 'fill-in',
+    question: '《论语》中提到的楚狂接舆、长沮、桀溺，《孟子》中提到的杨朱，认为天下已经坏到不可救药，主张远离政治做一个避世之士，这种持我们称这种人为（    ）。',
+    answer: '隐士'
+},
+{
+    type: 'fill-in',
+    question: '《论语·学而第一》记载有子的话：‘君子务本，本立而道生。（    ）也者，其为仁之本舆！’',
+    answer: '孝悌'
+},
+{
+    type: 'fill-in',
+    question: '《论语·里仁》说：‘父母之年，不可不知也。一则以（    ），一则以（    ）。’',
+    answer: '喜 惧'
+},
+{
+    type: 'fill-in',
+    question: '孔子称赞弟子颜回，说‘贤哉回也！一箪食，一瓢饮，在陋巷，人不堪其忧，回也（    ）。贤哉回也！’',
+    answer: '不改其乐'
+},
+{
+    type: 'fill-in',
+    question: '孟子谈‘君子有三乐’：‘父母俱存，兄弟无故，一乐也；仰不愧于天，俯不作于人，二乐也；（    ），三乐也。’',
+    answer: '得天下英才而教育之'
+},
+{
+    type: 'fill-in',
+    question: '《论语·子路》说：‘君子和而不同，小人（    ）。’',
+    answer: '同而不和'
+},
+{
+    type: 'fill-in',
+    question: '孔子心目中的君子是仁智勇的统一，并说仁者不（    ），智者不（    ），勇者不（    ）。（《论语·宪问》）',
+    answer: '忧 惑 惧'
+},
+{
+    type: 'fill-in',
+    question: '《论语·季氏》记孔子日：‘君子有三戒：少之时，血气未定，戒之在（）；及其壮也，血气方刚，戒之在（）；及其老也，血气既衰，戒之在（）。’',
+    answer: '色 斗 得'
+},
+{
+    type: 'fill-in',
+    question: '孟子说：‘人之所不学而能者，其（    ）也；所不虑而知者，其（    ）也。孩提之童无不知爱其亲者，及其长也，无不知敬其兄也。’（《孟子·尽心上》）',
+    answer: '良能 良知'
+},
+{
+    type: 'fill-in',
+    question: '孟子心目中的大丈夫人格特征是：‘得志，与民由之，不得志，独行其道，富贵不能（），贫贱不能（），威武不能（），此之谓大丈夫。’（《孟子·滕文公下》）',
+    answer: '淫 移 屈'
+},
+{
+    type: 'fill-in',
+    question: '孟子认为，在‘行仁义’和‘由仁义行’两者中，具有更高道德价值应该是（    ），因为这是回到了本心，有了来自生命内部的力量，人生才是痛快淋漓的生活，才能持久，才是有尊严的生活！',
+    answer: '由仁义行'
+},
+{
+    type: 'fill-in',
+    question: '按照冯友兰先生的观点，先秦道家三个阶段之第一阶段的代表性人物是（）。',
+    answer: '杨朱'
+},
+{
+    type: 'fill-in',
+    question: '《列子·杨朱篇》描述杨朱的立场：‘伯成子高不以一毫利物，舍国而隐耕。大禹不以一身自利，一体偏枯。古之人损一毫利天下不与也，（    ）。人人不损一毫，人人不利天下，天下治矣。’',
+    answer: '悉天下奉一人不取也'
+},
+{
+    type: 'fill-in',
+    question: '《庄子》一书，主要采用（）体裁来表达深邃的思想。',
+    answer: '寓言'
+},
+{
+    type: 'fill-in',
+    question: '在《道德经》第14章中，老子用了‘视之不见名日（），听之不闻名日（），搏之不得名日（），…是谓无状之状，无物之象，是谓恍惚。’来描述‘道’。',
+    answer: '夷 希 微'
+},
+{
+    type: 'fill-in',
+    question: '根据《道德经》第42章、第25章，将老子的说法补充完备：‘道生一，一生二，二生三，（    ）’，‘人法地，地法天，天法道，（    ）’',
+    answer: '三生万物 道法自然'
+},
+{
+    type: 'fill-in',
+    question: '《道德经》第40章说：‘反者道之动，（）者道之用’。',
+    answer: '弱'
+},
+{
+    type: 'fill-in',
+    question: '《道德经》第36章说：‘将欲之，必固（）之；将欲弱之必固（ ）之；将欲废之，必固（ ）之；将欲取之，必固（ ）之。’',
+    answer: '张 强 兴 与'
+},
+{
+    type: 'fill-in',
+    question: '按哲学家方东美先生所说，道家就像（ ），无法局限在宇宙狭小的角落里，而必须超升在广大虚空中纵横驰骋，独来独往。',
+    answer: '太空人'
+},
+{
+    type: 'fill-in',
+    question: '《庄子·逍遥游》中描写的两种极大之物是（ ）与（ ），给我们指明一种超越性的视野。',
+    answer: '鲲 鹏'
+},
+{
+    type: 'fill-in',
+    question: '庄子用了‘运斤成风’这个寓言来表达他和（ ）之间的心意相通与默契。',
+    answer: '惠施'
+},
+{
+    type: 'fill-in',
+    question: '庄子说：‘夏虫不可语于冰，笃于（ ）也；井蛙不可语于海，拘于（ ）也；曲士不可语于道，束于（ ）也。’以此说明人的理智思维的有限、肤浅甚至荒谬。',
+    answer: '时 虚 教'
+},
+{
+    type: 'fill-in',
+    question: '《庄子·逍遥游》通过名言‘鹊鹑巢于深林，（ ）；偃鼠饮河，（ ）’，表达上古隐士许由那种轻物重生的人生态度。',
+    answer: '不过一枝 不过满腹'
+},
+{
+    type: 'fill-in',
+    question: '‘让他三尺又何妨’出自‘六尺巷’的故事。故事的主人公是清代大学士（    ）。',
+    answer: '张英'
+},
+{
+    type: 'fill-in',
+    question: '‘寿则多辱’是《庄子·天地篇》借上古天子（    ）之口，表达的对时间（长寿的追求）的超越。',
+    answer: '尧'
+},
+{
+    type: 'fill-in',
+    question: '庄子妻死，庄子鼓盆而歌；秦失为老子吊丧，干嚎三声即止；庄子面对自己死亡时的达观；尤其是庄子与骷髅的一番对话，都表达的是（    ）的思想。',
+    answer: '齐生死'
+}
+];
+
+        let currentQuestionIndex = 0;
+        let wrongAnswers = [];
+        let isShuffled = false;
+        let currentWrongQuestionIndex = 0;
+
+        // 打乱题目顺序
+        function shuffleQuestions() {
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            isShuffled = true;
+            currentQuestionIndex = 0;
+            showQuestion();
+        }
+
+        // 按顺序答题
+        function orderQuestions() {
+            if (isShuffled) {
+                // 恢复原始顺序，这里简单假设原始顺序是按索引排序
+                questions.sort((a, b) => a.originalIndex - b.originalIndex);
+                isShuffled = false;
+            }
+            currentQuestionIndex = 0;
+            showQuestion();
+        }
+
+        // 显示题目
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                alert('所有题目已答完！');
+                return;
+            }
+            const question = questions[currentQuestionIndex];
+            const questionText = document.getElementById('question-text');
+            const optionsDiv = document.getElementById('options');
+            const fillInAnswer = document.getElementById('fill-in-answer');
+            const feedback = document.getElementById('feedback');
+            const correctAnswer = document.getElementById('correct-answer');
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+
+            questionText.textContent = question.question;
+            optionsDiv.innerHTML = '';
+            fillInAnswer.classList.add('hidden');
+            feedback.style.display = 'none';
+            correctAnswer.style.display = 'none';
+            nextQuestionBtn.classList.add('hidden');
+
+            if (question.type ==='single' || question.type ==='multiple' || question.type === 'judge') {
+                question.options.forEach(option => {
+                    const input = document.createElement('input');
+                    input.type = question.type ==='multiple'? 'checkbox' : 'radio';
+                    input.name = 'answer';
+                    input.value = option;
+                    const label = document.createElement('label');
+                    label.textContent = option;
+                    const div = document.createElement('div');
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    optionsDiv.appendChild(div);
+                });
+            } else if (question.type === 'fill-in') {
+                fillInAnswer.classList.remove('hidden');
+            }
+        }
+
+        // 提交答案
+        function submitAnswer() {
+            const question = questions[currentQuestionIndex];
+            const feedback = document.getElementById('feedback');
+            const correctAnswer = document.getElementById('correct-answer');
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            let userAnswer;
+
+            if (question.type ==='single' || question.type === 'judge') {
+                const selectedOption = document.querySelector('input[name="answer"]:checked');
+                userAnswer = selectedOption? selectedOption.value : null;
+            } else if (question.type ==='multiple') {
+                const selectedOptions = document.querySelectorAll('input[name="answer"]:checked');
+                userAnswer = Array.from(selectedOptions).map(option => option.value);
+            } else if (question.type === 'fill-in') {
+                userAnswer = document.getElementById('fill-in-answer').value;
+            }
+
+            let isCorrect;
+            if (question.type ==='multiple') {
+                isCorrect = userAnswer.length === question.answer.length && userAnswer.every(ans => question.answer.includes(ans));
+            } else {
+                isCorrect = userAnswer === question.answer;
+            }
+
+            if (isCorrect) {
+                feedback.textContent = '回答正确！';
+                feedback.style.color = 'green';
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 1000);
+            } else {
+                feedback.textContent = '回答错误！';
+                feedback.style.color ='red';
+                correctAnswer.textContent = `正确答案: ${Array.isArray(question.answer)? question.answer.join(', ') : question.answer}`;
+                wrongAnswers.push(question);
+                feedback.style.display = 'block';
+                correctAnswer.style.display = 'block';
+                nextQuestionBtn.classList.remove('hidden');
+            }
+        }
+
+        // 下一题
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            nextQuestionBtn.classList.add('hidden');
+        }
+
+        // 查看错题集
+        function showWrongAnswers() {
+            if (wrongAnswers.length === 0) {
+                alert('暂无错题！');
+                return;
+            }
+            currentWrongQuestionIndex = 0;
+            showWrongQuestion();
+            const questionContainer = document.getElementById('question-container');
+            const wrongAnswerContainer = document.getElementById('wrong-answer-container');
+            const backToQuestionsBtn = document.getElementById('back-to-questions-btn');
+            questionContainer.classList.add('hidden');
+            wrongAnswerContainer.classList.remove('hidden');
+            backToQuestionsBtn.classList.remove('hidden');
+        }
+
+        // 显示错题
+        function showWrongQuestion() {
+            if (currentWrongQuestionIndex >= wrongAnswers.length) {
+                alert('错题集题目已答完！');
+                backToQuestions();
+                return;
+            }
+            const question = wrongAnswers[currentWrongQuestionIndex];
+            const questionText = document.getElementById('wrong-question-text');
+            const optionsDiv = document.getElementById('wrong-options');
+            const fillInAnswer = document.getElementById('wrong-fill-in-answer');
+            const feedback = document.getElementById('wrong-feedback');
+            const correctAnswer = document.getElementById('wrong-correct-answer');
+            const nextQuestionBtn = document.getElementById('wrong-next-question-btn');
+
+            questionText.textContent = question.question;
+            optionsDiv.innerHTML = '';
+            fillInAnswer.classList.add('hidden');
+            feedback.style.display = 'none';
+            correctAnswer.style.display = 'none';
+            nextQuestionBtn.classList.add('hidden');
+
+            if (question.type ==='single' || question.type ==='multiple' || question.type === 'judge') {
+                question.options.forEach(option => {
+                    const input = document.createElement('input');
+                    input.type = question.type ==='multiple'? 'checkbox' : 'radio';
+                    input.name = 'wrong-answer';
+                    input.value = option;
+                    const label = document.createElement('label');
+                    label.textContent = option;
+                    const div = document.createElement('div');
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    optionsDiv.appendChild(div);
+                });
+            } else if (question.type === 'fill-in') {
+                fillInAnswer.classList.remove('hidden');
+            }
+        }
+
+        // 提交错题答案
+        function submitWrongAnswer() {
+            const question = wrongAnswers[currentWrongQuestionIndex];
+            const feedback = document.getElementById('wrong-feedback');
+            const correctAnswer = document.getElementById('wrong-correct-answer');
+            const nextQuestionBtn = document.getElementById('wrong-next-question-btn');
+            let userAnswer;
+
+            if (question.type ==='single' || question.type === 'judge') {
+                const selectedOption = document.querySelector('input[name="wrong-answer"]:checked');
+                userAnswer = selectedOption? selectedOption.value : null;
+            } else if (question.type ==='multiple') {
+                const selectedOptions = document.querySelectorAll('input[name="wrong-answer"]:checked');
+                userAnswer = Array.from(selectedOptions).map(option => option.value);
+            } else if (question.type === 'fill-in') {
+                userAnswer = document.getElementById('wrong-fill-in-answer').value;
+            }
+
+            let isCorrect;
+            if (question.type ==='multiple') {
+                isCorrect = userAnswer.length === question.answer.length && userAnswer.every(ans => question.answer.includes(ans));
+            } else {
+                isCorrect = userAnswer === question.answer;
+            }
+
+            if (isCorrect) {
+                feedback.textContent = '回答正确！';
+                feedback.style.color = 'green';
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    currentWrongQuestionIndex++;
+                    showWrongQuestion();
+                }, 1000);
+            } else {
+                feedback.textContent = '回答错误！';
+                feedback.style.color ='red';
+                correctAnswer.textContent = `正确答案: ${Array.isArray(question.answer)? question.answer.join(', ') : question.answer}`;
+                feedback.style.display = 'block';
+                correctAnswer.style.display = 'block';
+                nextQuestionBtn.classList.remove('hidden');
+            }
+        }
+
+        // 错题下一题
+        function wrongNextQuestion() {
+            currentWrongQuestionIndex++;
+            showWrongQuestion();
+            const nextQuestionBtn = document.getElementById('wrong-next-question-btn');
+            nextQuestionBtn.classList.add('hidden');
+        }
+
+        // 从错题集返回答题页面
+        function backToQuestions() {
+            const questionContainer = document.getElementById('question-container');
+            const wrongAnswerContainer = document.getElementById('wrong-answer-container');
+            const backToQuestionsBtn = document.getElementById('back-to-questions-btn');
+            questionContainer.classList.remove('hidden');
+            wrongAnswerContainer.classList.add('hidden');
+            backToQuestionsBtn.classList.add('hidden');
+        }
+
+        // 鼠标滚轮操作切换下一题
+        document.addEventListener('wheel', function (event) {
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            const wrongNextQuestionBtn = document.getElementById('wrong-next-question-btn');
+            if ((nextQuestionBtn.classList.contains('hidden') === false && event.deltaY > 0) ||
+                (wrongNextQuestionBtn.classList.contains('hidden') === false && event.deltaY > 0)) {
+                if (nextQuestionBtn.classList.contains('hidden') === false) {
+                    nextQuestion();
+                } else {
+                    wrongNextQuestion();
+                }
+            }
+        });
+
+        // 初始化事件监听器
+        document.getElementById('shuffle-btn').addEventListener('click', shuffleQuestions);
+        document.getElementById('order-btn').addEventListener('click', orderQuestions);
+        document.getElementById('submit-answer').addEventListener('click', submitAnswer);
+        document.getElementById('next-question-btn').addEventListener('click', nextQuestion);
+        document.getElementById('wrong-answer-btn').addEventListener('click', showWrongAnswers);
+        document.getElementById('wrong-submit-answer').addEventListener('click', submitWrongAnswer);
+        document.getElementById('wrong-next-question-btn').addEventListener('click', wrongNextQuestion);
+        document.getElementById('back-to-questions-btn').addEventListener('click', backToQuestions);
+
+        // 初始显示第一题
+        showQuestion();
+    </script>
+</body>
+</html>
